@@ -1,0 +1,315 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+    Layout = "~/Pages/Shared/_Layout.cshtml";
+}
+
+<div class="container">
+    <div class="row">
+        <div class="alert alert-dismissible" role="alert" style="display:none;">
+            <strong></strong>
+            <p></p>
+              <span type="button" class="close" data-bs-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></span>
+        </div>
+        <div class="col-sm-12">
+            <h2>Customer Management</h2>
+        </div>
+    </div>
+    <div id="viewCustomer" class="row">
+        <div class="col-sm-12">
+            <table id="customerstbl" class="table table-striped dt-responsive" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>View Details</th>
+                        <th>Customer Number</th>
+                        <th>First Name</th>
+                        <th>Last Name</th>
+                        <th>Date of Birth</th>
+                        <th>Last 4 of SSN</th>
+                        <th>Age</th>
+                    </tr>
+                </thead>
+            </table>
+            <div class="row">
+                <div class="col-sm-12">
+                    <button type="button" id="addButton" class="btn btn-link">
+                        Add Customer
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="inputCustomer" style="display: none;">
+        <div class="col-sm-6">
+            <div class="panel panel-primary">
+                <div class="panel-heading">
+                   <h3>Add New Customer</h3>
+                   <br />
+                </div>
+                <form autocomplete="off" id="custForm">
+                    <div class="panel-body">
+                        <div class="form-group">
+                            <label for="custnumber">Customer Number</label>
+                            <input type="text" id="custnumber" class="form-control" disabled placeholder="Customer Number will be generated upon creation." />
+                        </div>
+                        <br />
+                        <div class="form-group">
+                            <label for="firstname">First Name</label>
+                            <input type="text" id="firstname" class="form-control" required placeholder="First Name" />
+                        </div>
+                        <br />
+                        <div class="form-group">
+                            <label for="lastname">Last Name</label>
+                            <input type="text" id="lastname" class="form-control" required placeholder="Last Name" />
+                        </div>
+                        <br />
+                        <div class="form-group">
+                            <label for="birthdate">Date of Birth</label>
+                            <input type="date" id="birthdate" class="form-control" required placeholder="MM/DD/YYYY" />
+                        </div>
+                        <br />
+                        <div class="form-group">
+                            <label for="ssn">SSN</label>
+                            <input type="text" id="ssn" class="form-control" pattern="\d{3}-?\d{2}-?\d{4}"
+                                   placeholder="XXX-XX-XXXX" required />
+                        </div>
+                        <br />
+                        <div class="form-group">
+                            <label for="email">Email Address</label>
+                            <input type="email" id="email" class="form-control" required placeholder="XXXX@XXXX.com" />
+                        </div>
+                        <br />
+                        <div class="form-group">
+                            <label for="address">Address Line 1</label>
+                            <input type="text" id="address" class="form-control" required placeholder="Street Address" />
+                        </div>
+                        <br />
+                        <div class="form-group">
+                            <label for="city">City</label>
+                            <input type="text" id="city" class="form-control" required placeholder="City" />
+                        </div>
+                        <br />
+                        <div class="form-group">
+                            <label for="state">State</label>
+                            <input type="text" id="state" class="form-control" required placeholder="State" />
+                        </div>
+                        <br />
+                        <div class="form-group">
+                            <label for="address">Zipcode</label>
+                            <input type="number" id="zip" class="form-control" oninput="javascript: if (this.value.length > this.maxLength) this.value = this.value.slice(0, this.maxLength);"
+                                   required maxlength="5" placeholder="Zipcode" />
+                        </div>
+                        <br />
+                        <div class="form-group">
+                            <label for="phone">Mobile Phone Number</label>
+                            <input type="tel" id="phone" class="form-control" pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}" required placeholder="XXX-XXX-XXXX" />
+                        </div>
+                        <br />
+                    </div>
+                    <div class="panel-footer">
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <button type="submit" id="submitButton" class="btn btn-link">
+                                    Submit
+                                </button>
+                                <button type="button" id="cancelButton" class="btn btn-link">
+                                    Cancel
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts
+    {
+    <script>
+        $(document).ready(function() {
+            let endpoint = 'https://my.api.mockaroo.com/customers.json';
+            let apiKey = 'e95894a0';
+
+            var customerTable = $('#customerstbl').DataTable({
+                ajax: {
+                    url: endpoint + '?key=' + apiKey,
+                    method: "GET",
+                    dataSrc: "",
+                    error: function(jqXHR, statusText, errorThrown) {
+                        handleException(jqXHR, statusText, errorThrown);
+                    }
+                },
+                columns: [
+                    {
+                        className: 'dt-control',
+                        orderable: false,
+                        data: null,
+                        defaultContent: ''
+                    },
+                    { data: 'customer_number' },
+                    { data: 'first_name' },
+                    { data: 'last_name' },
+                    { data: 'date_birth' },
+                    {
+                        data: 'ssn', render: function(data, type, row) {
+                            if (data == null) {
+                                return 'N/A'
+                            } else { return data.substr(-4); }
+                        }
+                    },
+                    { data: 'date_birth', render: function(data, type, row) { if (data == null) {
+                                return 'N/A'
+                            } else return getAge(data); } },
+                ],
+            });
+
+            // Add event listener for opening and closing details
+            $('#customerstbl tbody').on('click', 'td.dt-control', function() {
+                var tr = $(this).closest('tr');
+                var row = customerTable.row(tr);
+
+                if (row.child.isShown()) {
+                    // This row is already open - close it
+                    row.child.hide();
+                    tr.removeClass('shown');
+                } else {
+                    // Open this row
+                    row.child(format(row.data())).show();
+                    tr.addClass('shown');
+                }
+            });
+
+            $("form").submit(function(event) {
+                var randomNum = randomNumber();
+                var joinDate = getJoinDate();
+                var birthDateFormatted = convertDate($('#birthdate').val());
+                var formData = {
+                    customer_number: randomNum, join_date: joinDate,
+                    first_name: $('#firstname').val(), last_name: $('#lastname').val(),
+                    date_birth: birthDateFormatted, ssn: $('#ssn').val(), email: $('#email').val(),
+                    mobile_phone_number: $('#phone').val(), primary_address: {
+                        address_line_1: $('#address').val(),
+                        city: $('#city').val(), state: $('#state').val(), zip_code: $('#zip').val()
+                    }
+                };
+                $.post(endpoint + '?key=' + apiKey, formData)
+                    .done(function(data, status) {
+                        var msg_body = "Customer:&ensp;" + randomNum + " with join date of " + joinDate + ", has successfully been added.<br/>  Name: " +
+                            formData.first_name + " " + formData.last_name +  "&ensp;Birth Date: " + formData.date_birth + "&ensp;SSN: " + formData.ssn + "&ensp;Email: " + formData.email
+                            + "&ensp;Primary Address: " + formData.primary_address.address_line_1 + ", " + formData.primary_address.city + ", " + formData.primary_address.state + ",&ensp;" + formData.primary_address.zip_code;
+                        showAlert("Success!", msg_body, "success");
+                    }).fail(function(xhr, status, error) {
+                        handleException(xhr, status, error);
+                    });
+                event.preventDefault();
+                
+                resetPage();
+
+            });
+
+            function handleException(request, message, error) {
+                var msg = "";
+                msg += "Code: " + request.status + "\n";
+                msg += "Text: " + request.statusText + "\n";
+                if (request.responseJSON != null) {
+                    msg += "Message" + request.responseJSON.Message + "\n";
+                }
+                msg += "&ensp;Please contact the Help Desk for assistance.\n";
+                showAlert("System Error!",msg,"danger" );
+            }
+
+            function getAge(birthDate) {
+                var dob = new Date(birthDate);
+                var month_diff = Date.now() - dob.getTime();
+                var age_dt = new Date(month_diff);
+                var year = age_dt.getUTCFullYear();
+                var age = Math.abs(year - 1970);
+
+                return age;
+            }
+
+            function randomNumber() {
+                var ranNum = "";
+                for (i = 0; i < 5; i++) {
+                    var number = Math.floor(Math.random() * 10);
+                    ranNum = ranNum + number;
+                }
+                return ranNum;
+            }
+
+            function getJoinDate() {
+                var today = new Date();
+                var dd = String(today.getDate()).padStart(2, '0');
+                var mm = String(today.getMonth() + 1).padStart(2, '0');
+                var yyyy = today.getFullYear();
+
+                today = mm + '/' + dd + '/' + yyyy;
+                return today;
+            }
+
+            function convertDate(date) {
+                var newDate = new Date(date);
+                var dd = String(newDate.getDate()).padStart(2, '0');
+                var mm = String(newDate.getMonth() + 1).padStart(2, '0');
+                var yyyy = newDate.getFullYear();
+
+                newDate = mm + '/' + dd + '/' + yyyy;
+                return newDate;
+            }
+
+            $('#addButton').click(function() {
+                $('#viewCustomer').hide();
+                $('#inputCustomer').show();
+                document.location.href = "#";
+            });
+
+            $('#cancelButton').click(function() {
+                resetPage();
+            })
+
+            function resetPage() {
+                document.getElementById("custForm").reset();
+                $('#viewCustomer').show();
+                $('#inputCustomer').hide();
+                document.location.href = "#";
+                customerTable.ajax.reload();
+                customerTable.search("");
+            }
+
+            function showAlert(msg_title, msg_body, msg_type) {
+                var AlertMsg = $('div[role="alert"]');
+                $(AlertMsg).find('strong').html(msg_title);
+                $(AlertMsg).find('p').html(msg_body);
+                $(AlertMsg).removeAttr('class');
+                $(AlertMsg).addClass('alert alert-dismissible alert-' + msg_type);
+                $(AlertMsg).show();
+            }
+        });
+
+        function format(d) {
+            return (
+                '<table cellpadding="5" cellspacing="0" border="0" style="padding-left:50px;">' +
+                '<tr>' +
+                '<td>Email:</td>' +
+                '<td>' + d.email + '</td>' +
+                '</tr>' +
+                '<tr>' +
+                '<td>Primary Address:</td>' +
+                '<td>' + d.primary_address.address_line_1 + ", " + d.primary_address.city + ", " + d.primary_address.state + "&ensp;"+d.primary_address.zip_code + '</td>' +
+                '</tr>' +
+                '<tr>' +
+                '<td>Mobile Phone Number:</td>' +
+                '<td>' + d.mobile_phone_number + '</td>' +
+                '<tr>' +
+                '<td>Join Date:</td>' +
+                '<td>' + d.join_date + '</td>' +
+                '</tr>' +
+                '</table>'
+            );
+        }
+    </script>
+}
